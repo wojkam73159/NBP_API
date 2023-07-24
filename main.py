@@ -20,18 +20,17 @@ def getDataNBP(url="http://api.nbp.pl/api/exchangerates/tables/a?format=json")->
 def mergeTwoTablesRates(tabel_A, tabel_B):
     rates_A=tabel_A[0]['rates']
     rates_B=tabel_B[0]['rates']
-    #print(json.dumps(rates_A, indent=4))
+
     rates_A=list(rates_A)
-    #print(rates_A)
     rates_B=list(rates_B)
+
     merged=rates_A+rates_B
-    #print(len(merged))
     return merged
-    #how to test // test by merged table length
+
 
 def addColumnToMerged(merged, effectiveDate):
 
-    for i in merged:#wiem ze nie optymalnie
+    for i in merged:
         i["effectiveDate"]=effectiveDate
 
     return merged
@@ -50,18 +49,16 @@ def normalize_data(merged):
 
 def saveToCSV(listOfLists, fileName):
     with open(fileName, 'w',encoding= "utf-8") as f:
-        # using csv.writer method from CSV package
+
         write = csv.writer(f)
 
-        #for i in listOfLists:
-        #    write.writerow(i)
+
         write.writerows(listOfLists)
 
 def wholeRun():
     tabel_A = getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/a?format=json')
     tabel_B = getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
 
-    #print(json.dumps(tabel_A[0], indent=4))
 
     merged=mergeTwoTablesRates(tabel_A, tabel_B)
 
@@ -80,28 +77,6 @@ if __name__ == '__main__':
     wholeRun()
 
 
-'''
-notes
-
-
-    #tabel_A = getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/a?format=json')
-    #tabel_B = getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
-
-    #rates_A = tabel_A[0]['rates']
-    #rates_B = tabel_B[0]['rates']
-    # print(json.dumps(rates_A, indent=4))
-    #rates_A = list(rates_A)
-    #rates_B = list(rates_B)
-    #merged = rates_A + rates_B
-
-    #effectiveDate=tabel_A[0]['effectiveDate']
-    #print(effectiveDate)
-    
-    merge:
-        #merged_json=json.dumps(merged)
-    #print(json.dumps(merged, indent=4))
-'''
-
 
 #structure of received json:
 '''//only keys:
@@ -111,7 +86,6 @@ notes
 effectiveDate:
 rates:list[]
 ]
-
 '''
 
 

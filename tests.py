@@ -20,13 +20,13 @@ def createMock():
 
 
 class MyTestCase(unittest.TestCase):
-    # def Setup(self):
 
-    # TODO: jakis mock by sie przydal
-    def test_getDataNBP_against_correct_json_type(self):#tutaj testuje zgodnosc typu jsona jakiego zwraca api, robie to z mockiem
+
+    def test_getDataNBP_against_correct_json_type(self):
+        #tutaj testuje zgodnosc typu jsona jakiego zwraca api, robie to z mockiem
         #ale w razie co mozna zrobic to z tym co zwraca api
         #return_data = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
-        #print(type(return_data))
+
         response_mock = createMock()
         api_response_json_mock = json.loads(response_mock.content)
         rates_json=json.loads(r'[{"one":"json"}]')
@@ -35,6 +35,7 @@ class MyTestCase(unittest.TestCase):
         actuall = type(api_response_json_mock)
         print(expected)
         print(actuall)
+        #print(type(return_data))
 
 
         self.assertEqual( expected,actuall )
@@ -55,13 +56,12 @@ class MyTestCase(unittest.TestCase):
 
     def test_getDataNBP_has_list_ofRates(self):
         #return_data = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
-        #mock has ist of rates
+        #mock has list of rates
         response_mock = createMock()
         api_response_json_mock = json.loads(response_mock.content)
 
         self.assertEqual(type(api_response_json_mock[0]['rates']) , type(json.loads(r'[{"one":"json"}]')))
 
-        # print(json.dumps(return_data, indent=4))
 
     def test_merge_two_json_against_correct_size(self):
         #tabel_A = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/a?format=json')
@@ -70,15 +70,18 @@ class MyTestCase(unittest.TestCase):
         api_response_json_mock1 = json.loads(response_mock.content)
         response_mock = createMock()
         api_response_json_mock2 = json.loads(response_mock.content)
+
         self.assertEqual(len(main.mergeTwoTablesRates(api_response_json_mock1, api_response_json_mock2)), 4)
 
     def test_add_column_to_merged_efective_date_present(self):
         #tabel_A = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/a?format=json')
         #tabel_B = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
+
         response_mock = createMock()
         api_response_json_mock1 = json.loads(response_mock.content)
         response_mock = createMock()
         api_response_json_mock2 = json.loads(response_mock.content)
+
         merged = main.mergeTwoTablesRates(api_response_json_mock1, api_response_json_mock2)
         effectiveDate = api_response_json_mock1[0]['effectiveDate']
 
