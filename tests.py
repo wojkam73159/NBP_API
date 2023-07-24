@@ -46,7 +46,6 @@ class MyTestCase(unittest.TestCase):
 
 
     def test_getDataNBP_against_correct_json_keys(self):
-        #return_data = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
         # "http://api.nbp.pl/api/exchangerates/tables/a?format=json"
 
         expectedKeys = {'table', 'no', 'effectiveDate', 'rates'}
@@ -57,7 +56,6 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual( expected,result )
 
     def test_getDataNBP_has_list_ofRates(self):
-        #return_data = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
 
         expected=type(json.loads(r'[{"one":"json"}]'))
         result=type(self.api_response_json_mock1[0]['rates'])
@@ -65,15 +63,11 @@ class MyTestCase(unittest.TestCase):
 
 
     def test_merge_two_json_against_correct_size(self):
-
-
         expected=4
         result=len(main.mergeTwoTablesRates(self.api_response_json_mock1, self.api_response_json_mock2))
         self.assertEqual(expected, result)
 
     def test_add_column_to_merged_efective_date_present(self):
-
-
         response_mock = createMock()
         api_response_json_mock1 = json.loads(response_mock.content)
         response_mock = createMock()
@@ -89,8 +83,6 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual(expected, result )
 
     def test_normalize_data(self):
-
-
         merged = main.mergeTwoTablesRates(self.api_response_json_mock1, self.api_response_json_mock2)
         effectiveDate = self.api_response_json_mock1[0]['effectiveDate']
 
