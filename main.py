@@ -1,84 +1,74 @@
-
 import json
 import requests
-import unittest
-import pandas as pd
+# import unittest
+# import pandas as pd
 import csv
+from typing import Union
 
 
-#http://api.nbp.pl/api/exchangerates/tables/b?format=json
-def getDataNBP(url="http://api.nbp.pl/api/exchangerates/tables/a?format=json")->json:
-    receivedData=requests.get(url)
-    if receivedData.status_code==200:
-        jsonData=json.loads(receivedData.content)
-        return jsonData
-    else:
-        raise Exception("error while connecting to api, status code:{}".format(receivedData.status_code))
+# http://api.nbp.pl/api/exchangerates/tables/b?format=json
+def get_data_nbp(url: str = "http://api.nbp.pl/api/exchangerates/tables/a?format=json") -> Union[list, dict]:
+    received_data = requests.get(url)
+    received_data.raise_for_status()
+    json_data = received_data.json()
+    return json_data
 
 
+def merge_two_tables_rates(tabel_a, tabel_b):
+    rates_a = tabel_a[0]['rates']
+    rates_b = tabel_b[0]['rates']
 
-def mergeTwoTablesRates(tabel_A, tabel_B):
-    rates_A=tabel_A[0]['rates']
-    rates_B=tabel_B[0]['rates']
+    rates_a = list(rates_a)
+    rates_b = list(rates_b)
 
-    rates_A=list(rates_A)
-    rates_B=list(rates_B)
-
-    merged=rates_A+rates_B
+    merged = rates_a + rates_b
     return merged
 
 
-def addColumnToMerged(merged, effectiveDate):
-
+def add_column_to_merged(merged, effective_date):
     for i in merged:
-        i["effectiveDate"]=effectiveDate
+        i["effectiveDate"] = effective_date
 
     return merged
+
 
 def normalize_data(merged):
-    myTab=list(merged[0].keys())
-    myTab=[myTab]
-    tempTab1=[]
-    for i in merged:
-        for j in i.keys():
-            tempTab1.append(i[j])
-        myTab.append(tempTab1)
-        tempTab1=[]
+    my_tab2 = list(merged[0].keys())
+    my_tab = [my_tab2]
+    for elem in merged:
+        temp_tab1 = list(elem.values())
+        # for j in elem.keys():
+        #    temp_tab1.append(elem[j])
+        my_tab.append(temp_tab1)
     print("debug")
-    return myTab
+    return my_tab
 
-def saveToCSV(listOfLists, fileName):
-    with open(fileName, 'w',encoding= "utf-8") as f:
 
+def save_to_csv(list_of_lists, file_name):
+    with open(file_name, 'w', encoding="utf-8") as f:
         write = csv.writer(f)
+        write.writerows(list_of_lists)
 
 
-        write.writerows(listOfLists)
+def whole_run():
+    table_a = get_data_nbp(r'http://api.nbp.pl/api/exchangerates/tables/a?format=json')
+    table_b = get_data_nbp(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
 
-def wholeRun():
-    tabel_A = getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/a?format=json')
-    tabel_B = getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
+    merged = merge_two_tables_rates(table_a, table_b)
 
+    effective_date = table_a[0]['effectiveDate']
+    add_column_to_merged(merged, effective_date)
+    merged = normalize_data(merged)
+    save_to_csv(merged, effective_date + ".csv")
 
-    merged=mergeTwoTablesRates(tabel_A, tabel_B)
-
-    effectiveDate=tabel_A[0]['effectiveDate']
-    addColumnToMerged(merged,effectiveDate)
-    merged=normalize_data(merged)
-    saveToCSV(merged,effectiveDate+".csv")
-
-    #df = pd.json_normalize(merged)
-    #df.to_csv("{}.csv".format(effectiveDate), index=False)
-
+    # df = pd.json_normalize(merged)
+    # df.to_csv("{}.csv".format(effectiveDate), index=False)
 
 
 if __name__ == '__main__':
+    whole_run()
 
-    wholeRun()
-
-
-
-#structure of received json:
+# structure of received json:
 '''//only keys:
 [
 'table':
@@ -87,7 +77,3 @@ effectiveDate:
 rates:list[]
 ]
 '''
-
-
-
-
