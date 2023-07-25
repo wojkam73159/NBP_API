@@ -12,61 +12,63 @@ class MockedNBP:
         self.status_code = status_code
         self.content = json_content
 
+    def get(self, url):
+        return self
 
-def create_mock():
-    rates = b'[{ "table": "A", "no": "140/A/NBP/2023", "effectiveDate": "2023-07-21", "rates":[{ "currency": "yuan renminbi (Chiny)", "code": "CNY","mid": 0.5567 }, { "currency": "SDR (MFW)","code": "XDR","mid": 5.3696} ] }]'
-    # correct NBP_api format of returned data
-    url = r'http://api.nbp.pl/api/exchangerates/tables/b?format=json'
-    a = MockedNBP(url, 200, rates)
-    return a
+    def json(self):
+        return [{"table": "A", "no": "140/A/NBP/2023", "effectiveDate": "2023-07-21",
+                 "rates": [{"currency": "yuan renminbi (Chiny)", "code": "CNY", "mid": 0.5567},
+                           {"currency": "SDR (MFW)", "code": "XDR", "mid": 5.3696}]}]
+
+    def raise_for_status(self):
+        pass
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        # self.tabel_A = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/a?format=json')
-        # self.tabel_B = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
-        response_mock = create_mock()
-        self.api_response_json_mock1 = json.loads(response_mock.content)
-        response_mock = create_mock()
-        self.api_response_json_mock2 = json.loads(response_mock.content)
+        # self.table_A = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/a?format=json')
+        # self.table_B = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
+        rates = b'[{ "table": "A", "no": "140/A/NBP/2023", "effectiveDate": "2023-07-21", "rates":[{ "currency": "yuan renminbi (Chiny)", "code": "CNY","mid": 0.5567 }, { "currency": "SDR (MFW)","code": "XDR","mid": 5.3696} ] }]'
+        # correct NBP_api format of returned data
+        url = r'http://api.nbp.pl/api/exchangerates/tables/b?format=json'
+        self.original_request = main.requests
+        response_mock = MockedNBP(url, 200, rates)  # test double
+        main.requests = response_mock  # monkey patching po nim tear down
 
-    def test_getDataNBP_against_correct_json_type(self):
-        # tutaj testuje zgodnosc typu jsona jakiego zwraca api, robie to z mockiem
-        # ale w razie co mozna zrobic to z tym co zwraca api
-        # return_data = main.getDataNBP(r'http://api.nbp.pl/api/exchangerates/tables/b?format=json')
+    def tearDown(self) -> None:
+        main.requests = self.original_request  # powrot do orginalnego requesta z maina
 
-        rates_json = json.loads(r'[{"one":"json"}]')
+    def test_get_data_nbp_against_correct_json_type(self):
+        expected = [{"table": "A", "no": "140/A/NBP/2023", "effectiveDate": "2023-07-21",
+                     "rates": [{"currency": "yuan renminbi (Chiny)", "code": "CNY", "mid": 0.5567},
+                               {"currency": "SDR (MFW)", "code": "XDR", "mid": 5.3696}]}]
+        result = main.get_data_nbp("")
+        self.assertListEqual(result, expected)
 
-        expected_type = type(rates_json)
-        result = self.api_response_json_mock1
-        self.assertIsInstance(result, expected_type)
-        # print(expected)
-        # print(result)
-        # print(type(return_data))
-
-    def test_getDataNBP_against_correct_json_keys(self):
-        # "http://api.nbp.pl/api/exchangerates/tables/a?format=json"
-
+    def test_get_data_nbp_against_correct_json_keys(self):
         expected_keys = {'table', 'no', 'effectiveDate', 'rates'}
-        json_keys = self.api_response_json_mock1[0].keys()
+        json_keys = main.get_data_nbp("")[0].keys()
         for i in expected_keys:
             self.assertIn(i, json_keys)
 
-    def test_getDataNBP_has_list_ofRates(self):
-
-        expected = json.loads(r'[{"one":"json"}]')
-        result = self.api_response_json_mock1[0]['rates']
-        self.assertIsInstance(result, type(expected))
+    def test_get_data_nbp_has_list_of_rates(self):
+        nbp_mock_response = main.get_data_nbp()
+        expected = list
+        result = nbp_mock_response[0]['rates']
+        self.assertIsInstance(result, expected)
 
     def test_merge_two_json_against_correct_size(self):
+        nbp_mock_response1 = main.get_data_nbp()
+        nbp_mock_response2 = main.get_data_nbp()
         expected = 4
-        result = len(main.merge_two_tables_rates(self.api_response_json_mock1, self.api_response_json_mock2))
+        result = len(main.merge_two_tables_rates(nbp_mock_response1, nbp_mock_response2))
         self.assertEqual(expected, result)
 
     def test_add_column_to_merged_effective_date_present(self):
-
-        merged = main.merge_two_tables_rates(self.api_response_json_mock1, self.api_response_json_mock2)
-        effective_date = self.api_response_json_mock1[0]['effectiveDate']
+        api_response_mock1 = main.get_data_nbp()
+        api_response_mock2 = main.get_data_nbp()
+        merged = main.merge_two_tables_rates(api_response_mock1, api_response_mock2)
+        effective_date = api_response_mock1[0]['effectiveDate']
 
         main.add_column_to_merged(merged, effective_date)
         expected = effective_date
@@ -75,18 +77,18 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual(expected, result)
 
     def test_normalize_data(self):
-        merged = main.merge_two_tables_rates(self.api_response_json_mock1, self.api_response_json_mock2)
-        effective_date = self.api_response_json_mock1[0]['effectiveDate']
+        api_response_mock1 = main.get_data_nbp()
+        api_response_mock2 = main.get_data_nbp()
+        merged = main.merge_two_tables_rates(api_response_mock1, api_response_mock2)
+        effective_date = api_response_mock1[0]['effectiveDate']
 
         main.add_column_to_merged(merged, effective_date)
 
         result = main.normalize_data(merged)
-        expected_type1 = type([])
         result = result
-        self.assertIsInstance(result, expected_type1)
-        expected_type2 = type([])
+        self.assertIsInstance(result, list)
         result = result[0]
-        self.assertIsInstance(result, expected_type2)
+        self.assertIsInstance(result, list)
 
     # def test_save_to_csv(self):
 
@@ -100,6 +102,5 @@ if __name__ == '__main__':
 linki:
  "http://api.nbp.pl/api/exchangerates/tables/a?format=json"
  "http://api.nbp.pl/api/exchangerates/tables/b?format=json"
- print(type(json.loads(r'[{"one":"json"}]')))
 
 '''
